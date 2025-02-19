@@ -30,27 +30,35 @@ export async function criarPedidoDB(pool: Pool, id_cliente: number, itens: Pedid
   }
 }
 
-export async function listarPedidosDB(pool: Pool): Promise<Pedido[]> {
+export async function listarPedidosDB(pool: Pool, page: number = 1, limit: number = 10): Promise<{ pedidos: Pedido[], total: number }> {
   const connection = await pool.getConnection();
 
   try {
-    const [pedidos]: any = await connection.execute('SELECT * FROM pedidos');
+    const offset = (page - 1) * limit;
+
+    const [[{ total }]]: any = await connection.execute('SELECT COUNT(*) as total FROM pedidos');
+
+    const [pedidos]: any = await connection.execute(
+      'SELECT * FROM pedidos LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
 
     for (const pedido of pedidos) {
       const [itens]: any = await connection.execute(
-        'SELECT * FROM pedido_itens WHERE id_pedido = ?', 
+        'SELECT * FROM pedido_itens WHERE id_pedido = ?',
         [pedido.id_pedido]
       );
       pedido.itens = itens;
     }
 
-    return pedidos;
+    return { pedidos, total };
   } catch (error) {
     throw new Error('Erro ao listar pedidos: ' + error);
   } finally {
     connection.release();
   }
 }
+
 
 export async function atualizarPedidoDB(pool: Pool, id_pedido: number, id_cliente: number, itens: PedidoItem[]): Promise<Pedido | null> {
   const connection = await pool.getConnection();

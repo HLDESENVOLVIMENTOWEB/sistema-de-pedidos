@@ -13,14 +13,27 @@ export async function criarCliente(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
-export async function listarClientes(_: FastifyRequest, reply: FastifyReply) {
+export async function listarClientes(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const clientes = await listarClientesDB(pool);
-    reply.send(clientes);
+    const { page = '1', limit = '10' } = request.query as { page?: string; limit?: string };
+
+    const pageNumber = Math.max(1, parseInt(page, 10));
+    const limitNumber = Math.max(1, parseInt(limit, 10));
+
+    const { clientes, total } = await listarClientesDB(pool, pageNumber, limitNumber);
+
+    reply.send({
+      clientes,
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+    });
   } catch (error) {
     reply.status(500).send({ error: (error as Error).message });
   }
 }
+
 
 export async function atualizarCliente(request: FastifyRequest, reply: FastifyReply) {
   try {

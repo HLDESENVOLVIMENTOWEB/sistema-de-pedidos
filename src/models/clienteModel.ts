@@ -9,9 +9,14 @@ export async function criarClienteDB(pool: Pool, nome: string, email: string): P
   return { id_cliente: result.insertId, nome, email };
 }
 
-export async function listarClientesDB(pool: Pool): Promise<Cliente[]> {
-  const [rows]: any = await pool.execute('SELECT * FROM clientes');
-  return rows;
+export async function listarClientesDB(pool: Pool, page: number, limit: number): Promise<{ clientes: Cliente[]; total: number }> {
+  const offset = (page - 1) * limit;
+
+  const [rows]: any = await pool.execute('SELECT * FROM clientes LIMIT ? OFFSET ?', [limit, offset]);
+
+  const [[{ total }]]: any = await pool.execute('SELECT COUNT(*) AS total FROM clientes');
+
+  return { clientes: rows, total };
 }
 
 export async function atualizarClienteDB(pool: Pool, id_cliente: number, nome: string, email: string): Promise<Cliente | null> {

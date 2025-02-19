@@ -16,14 +16,23 @@ export async function criarPedido(
   }
 }
 
-export async function listarPedidos(_: FastifyRequest, reply: FastifyReply) {
+export async function listarPedidos(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const pedidos = await listarPedidosDB(pool);
-    reply.send(pedidos);
+    const { page = 1, limit = 10 } = request.query as { page?: number, limit?: number };
+
+    const { pedidos, total } = await listarPedidosDB(pool, Number(page), Number(limit));
+
+    reply.send({
+      pedidos,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
   } catch (error) {
     reply.status(500).send({ error: (error as Error).message });
   }
 }
+
 
 export async function atualizarPedido(
   request: FastifyRequest<{ Params: { id: string }, Body: Pedido }>,
