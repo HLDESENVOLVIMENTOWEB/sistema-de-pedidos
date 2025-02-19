@@ -9,10 +9,23 @@ export async function criarProdutoDB(pool: Pool, nome: string, preco: number): P
   return { id_produto: result.insertId, nome, preco };
 }
 
-export async function listarProdutosDB(pool: Pool): Promise<Produto[]> {
-  const [rows]: any = await pool.execute('SELECT * FROM produtos');
-  return rows;
+export async function listarProdutosDB(pool: Pool, limit: number, offset: number): Promise<{ produtos: Produto[], total: number }> {
+  if (isNaN(limit) || isNaN(offset)) {
+    throw new Error('Parâmetros inválidos para a consulta');
+  }
+
+  const [produtos]: any = await pool.execute(
+    'SELECT * FROM produtos LIMIT ? OFFSET ?',
+    [limit, offset]
+  );
+
+  const [countRows]: any = await pool.execute(
+    'SELECT COUNT(*) as total FROM produtos'
+  );
+
+  return { produtos, total: countRows[0].total };
 }
+
 
 export async function atualizarProdutoDB(pool: Pool, id_produto: number, nome: string, preco: number): Promise<Produto | null> {
   const [result]: any = await pool.execute(
