@@ -9,16 +9,15 @@ export async function criarClienteDB(pool: Pool, nome: string, email: string): P
   return { id_cliente: result.insertId, nome, email };
 }
 
-export async function listarClientesDB(pool: Pool, limit: number, offset: number): Promise<{ clientes: Cliente[], total: number }> {
-  const query = `SELECT * FROM clientes LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
-  const [clientes]: any = await pool.execute(query);
+export async function listarClientesDB(pool: Pool, limit: number, offset: number, search: string): Promise<{ clientes: Cliente[], total: number }> {
+  const query = `SELECT * FROM clientes WHERE nome LIKE '%${search}%' LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+const [clientes]: any = await pool.execute(query);
 
+const countQuery = `SELECT COUNT(*) as total FROM clientes WHERE nome LIKE '%${search}%'`;
+const [[{ total }]]: any = await pool.execute(countQuery);
 
-  const [[{ total }]]: any = await pool.execute(
-    'SELECT COUNT(*) as total FROM clientes'
-  );
+return { clientes, total };
 
-  return { clientes, total };
 }
 
 

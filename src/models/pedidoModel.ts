@@ -30,7 +30,7 @@ export async function criarPedidoDB(pool: Pool, id_cliente: number, itens: Pedid
   }
 }
 
-export async function listarPedidosDB(pool: Pool, limit: number, offset: number): Promise<{ pedidos: Pedido[], total: number }> {
+export async function listarPedidosDB(pool: Pool, limit: number, offset: number, search: string): Promise<{ pedidos: Pedido[], total: number }> {
   const connection = await pool.getConnection();
 
   try {
@@ -42,6 +42,7 @@ export async function listarPedidosDB(pool: Pool, limit: number, offset: number)
       c.nome AS nome_cliente
     FROM pedidos p
     JOIN clientes c ON p.id_cliente = c.id_cliente
+    WHERE c.nome LIKE '%${search}%'
     LIMIT ${Number(limit)} OFFSET ${Number(offset)};
   `;
 
@@ -58,7 +59,7 @@ export async function listarPedidosDB(pool: Pool, limit: number, offset: number)
           pr.nome AS nome_produto
         FROM pedido_itens pi
         JOIN produtos pr ON pi.id_produto = pr.id_produto
-        WHERE pi.id_pedido = ?${Number(pedido.id_pedido)};
+        WHERE pi.id_pedido = ${Number(pedido.id_pedido)};
       `;
 
       const [itens]: any = await pool.execute(queryItens);

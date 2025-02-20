@@ -15,24 +15,24 @@ export async function criarCliente(request: FastifyRequest, reply: FastifyReply)
 
 export async function listarClientes(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { page = "1", limit = "10" } = request.query as { page?: string; limit?: string };
+    const { page = "1", limit = "10", search = "" } = request.query as { page?: string; limit?: string; search?: string };
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     const offset = (pageNumber - 1) * limitNumber;
 
-    const { clientes, total } = await listarClientesDB(pool, limitNumber, offset);
+    const { clientes, total } = await listarClientesDB(pool, limitNumber, offset, search);
 
-    
     reply.send({
-      clientes,     
-      total,         
-      page: pageNumber, 
-      totalPages: Math.ceil(total / limitNumber), 
+      clientes,
+      total,
+      page: pageNumber,
+      totalPages: Math.ceil(total / limitNumber),
     });
   } catch (error) {
     reply.status(500).send({ error: (error as Error).message });
   }
 }
+
 
 
 

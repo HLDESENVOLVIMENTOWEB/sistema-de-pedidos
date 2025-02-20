@@ -9,13 +9,13 @@ export async function criarProdutoDB(pool: Pool, nome: string, preco: number): P
   return { id_produto: result.insertId, nome, preco };
 }
 
-export async function listarProdutosDB(pool: Pool, limit: number, offset: number): Promise<{ produtos: Produto[], total: number }> {
-  const query = `SELECT * FROM produtos LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+export async function listarProdutosDB(pool: Pool, limit: number, offset: number, search: string): Promise<{ produtos: any[], total: number }> {
+  const query = `SELECT * FROM produtos WHERE nome LIKE '%${search}%' LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
   const [produtos]: any = await pool.execute(query);
 
-  const [[{ total }]]: any = await pool.execute(
-    'SELECT COUNT(*) as total FROM produtos'
-  );
+  const countQuery = `SELECT COUNT(*) as total FROM produtos WHERE nome LIKE '%${search}%'`;
+  const [[{ total }]]: any = await pool.execute(countQuery);
+
 
   return { produtos, total };
 }
