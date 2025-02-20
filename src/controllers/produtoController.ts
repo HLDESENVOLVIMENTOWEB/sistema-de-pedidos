@@ -13,36 +13,25 @@ export async function criarProduto(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
-export async function listarProdutos(
-  request: FastifyRequest<{ Querystring: { page?: string; limit?: string } }>, 
-  reply: FastifyReply
-) {
+export async function listarProdutos(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const page = parseInt(request.query.page ?? '1', 10);
-    const limit = parseInt(request.query.limit ?? '10', 10);
+    const { page = "1", limit = "10" } = request.query as { page?: string; limit?: string };
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const offset = (pageNumber - 1) * limitNumber;
 
-    if (page < 1 || limit < 1) {
-      return reply.status(400).send({ error: 'Os parâmetros page e limit devem ser maiores que 0' });
-    }
-
-    const offset = (page - 1) * limit;
-
-    const { produtos, total } = await listarProdutosDB(pool, limit, offset);
+    const { produtos, total } = await listarProdutosDB(pool, limitNumber, offset);
 
     reply.send({
+      produtos,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      data: produtos,
+      page: pageNumber,
+      totalPages: Math.ceil(total / limitNumber),
     });
   } catch (error) {
-    console.error('Erro ao listar produtos:', error);
     reply.status(500).send({ error: (error as Error).message });
   }
 }
-
-
 
 export async function atualizarProduto(request: FastifyRequest, reply: FastifyReply) {
   try {

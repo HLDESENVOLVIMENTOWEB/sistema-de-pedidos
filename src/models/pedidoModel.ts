@@ -30,26 +30,45 @@ export async function criarPedidoDB(pool: Pool, id_cliente: number, itens: Pedid
   }
 }
 
-export async function listarPedidosDB(pool: Pool, page: number = 1, limit: number = 10): Promise<{ pedidos: Pedido[], total: number }> {
+export async function listarPedidosDB(pool: Pool, limit: number, offset: number): Promise<{ pedidos: Pedido[], total: number }> {
   const connection = await pool.getConnection();
 
   try {
-    const offset = (page - 1) * limit;
+   const query = `
+    SELECT 
+      p.id_pedido, 
+      p.data, 
+      p.id_cliente, 
+      c.nome AS nome_cliente
+    FROM pedidos p
+    JOIN clientes c ON p.id_cliente = c.id_cliente
+    LIMIT ${Number(limit)} OFFSET ${Number(offset)};
+  `;
 
-    const [[{ total }]]: any = await connection.execute('SELECT COUNT(*) as total FROM pedidos');
-
-    const [pedidos]: any = await connection.execute(
-      'SELECT * FROM pedidos LIMIT ? OFFSET ?',
-      [limit, offset]
-    );
+    const [pedidos]: any = await pool.execute(query);
 
     for (const pedido of pedidos) {
-      const [itens]: any = await connection.execute(
-        'SELECT * FROM pedido_itens WHERE id_pedido = ?',
-        [pedido.id_pedido]
-      );
+      const queryItens = `
+        SELECT 
+          pi.id_pedido_item, 
+          pi.id_pedido, 
+          pi.id_produto, 
+          pi.qtde, 
+          pi.preco, 
+          pr.nome AS nome_produto
+        FROM pedido_itens pi
+        JOIN produtos pr ON pi.id_produto = pr.id_produto
+        WHERE pi.id_pedido = ?${Number(pedido.id_pedido)};
+      `;
+
+      const [itens]: any = await pool.execute(queryItens);
+
       pedido.itens = itens;
     }
+    const [[{ total }]]: any = await connection.execute(
+      'SELECT COUNT(*) as total FROM pedidos'
+    );
+
 
     return { pedidos, total };
   } catch (error) {
@@ -58,6 +77,7 @@ export async function listarPedidosDB(pool: Pool, page: number = 1, limit: numbe
     connection.release();
   }
 }
+
 
 
 export async function atualizarPedidoDB(pool: Pool, id_pedido: number, id_cliente: number, itens: PedidoItem[]): Promise<Pedido | null> {

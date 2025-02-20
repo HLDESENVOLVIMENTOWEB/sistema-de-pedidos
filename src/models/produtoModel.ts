@@ -10,20 +10,14 @@ export async function criarProdutoDB(pool: Pool, nome: string, preco: number): P
 }
 
 export async function listarProdutosDB(pool: Pool, limit: number, offset: number): Promise<{ produtos: Produto[], total: number }> {
-  if (isNaN(limit) || isNaN(offset)) {
-    throw new Error('Parâmetros inválidos para a consulta');
-  }
+  const query = `SELECT * FROM produtos LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+  const [produtos]: any = await pool.execute(query);
 
-  const [produtos]: any = await pool.execute(
-    'SELECT * FROM produtos LIMIT ? OFFSET ?',
-    [limit, offset]
-  );
-
-  const [countRows]: any = await pool.execute(
+  const [[{ total }]]: any = await pool.execute(
     'SELECT COUNT(*) as total FROM produtos'
   );
 
-  return { produtos, total: countRows[0].total };
+  return { produtos, total };
 }
 
 

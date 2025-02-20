@@ -5,9 +5,9 @@ import { Cliente } from '../types';
 
 export async function criarCliente(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { nome, email } = request.body as Cliente;
-    const novoCliente = await criarClienteDB(pool, nome, email);
-    reply.send(novoCliente);
+    const { nome, email, id_cliente } = request.body as Cliente;
+     const novoCliente = await criarClienteDB(pool, nome, email);
+    reply.send(novoCliente); 
   } catch (error) {
     reply.status(500).send({ error: (error as Error).message });
   }
@@ -15,24 +15,25 @@ export async function criarCliente(request: FastifyRequest, reply: FastifyReply)
 
 export async function listarClientes(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { page = '1', limit = '10' } = request.query as { page?: string; limit?: string };
+    const { page = "1", limit = "10" } = request.query as { page?: string; limit?: string };
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const offset = (pageNumber - 1) * limitNumber;
 
-    const pageNumber = Math.max(1, parseInt(page, 10));
-    const limitNumber = Math.max(1, parseInt(limit, 10));
+    const { clientes, total } = await listarClientesDB(pool, limitNumber, offset);
 
-    const { clientes, total } = await listarClientesDB(pool, pageNumber, limitNumber);
-
+    
     reply.send({
-      clientes,
-      page: pageNumber,
-      limit: limitNumber,
-      total,
-      totalPages: Math.ceil(total / limitNumber),
+      clientes,     
+      total,         
+      page: pageNumber, 
+      totalPages: Math.ceil(total / limitNumber), 
     });
   } catch (error) {
     reply.status(500).send({ error: (error as Error).message });
   }
 }
+
 
 
 export async function atualizarCliente(request: FastifyRequest, reply: FastifyReply) {
