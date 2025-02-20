@@ -9,15 +9,20 @@ export async function criarClienteDB(pool: Pool, nome: string, email: string): P
   return { id_cliente: result.insertId, nome, email };
 }
 
-export async function listarClientesDB(pool: Pool, page: number, limit: number): Promise<{ clientes: Cliente[]; total: number }> {
-  const offset = (page - 1) * limit;
+export async function listarClientesDB(pool: Pool, limit: number, offset: number): Promise<{ clientes: Cliente[], total: number }> {
+  const query = `SELECT * FROM clientes LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+  const [clientes]: any = await pool.execute(query);
 
-  const [rows]: any = await pool.execute('SELECT * FROM clientes LIMIT ? OFFSET ?', [limit, offset]);
 
-  const [[{ total }]]: any = await pool.execute('SELECT COUNT(*) AS total FROM clientes');
+  const [[{ total }]]: any = await pool.execute(
+    'SELECT COUNT(*) as total FROM clientes'
+  );
 
-  return { clientes: rows, total };
+  return { clientes, total };
 }
+
+
+
 
 export async function atualizarClienteDB(pool: Pool, id_cliente: number, nome: string, email: string): Promise<Cliente | null> {
   const [result]: any = await pool.execute(
